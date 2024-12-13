@@ -2,8 +2,6 @@ package facade;
 
 import model.PasswordEntry;
 import model.PasswordEntryBuilder;
-import strategy.EncryptionStrategy;
-import strategy.AESEncryptionStrategy;
 import storage.PasswordStorage;
 import storage.FilePasswordStorage;
 
@@ -14,8 +12,6 @@ public class PasswordManagerFacade {
     private final boolean unlocked;
 
     public PasswordManagerFacade(char[] masterPassword) {
-        // Попытаемся загрузить хранилище с данным мастер-паролем.
-        // Если файла нет или он пуст, значит первый запуск - создадим новое хранилище.
         
         this.storage = new FilePasswordStorage("vault.dat");
         this.unlocked = storage.loadOrInit(masterPassword);
@@ -43,6 +39,16 @@ public class PasswordManagerFacade {
             return entry.getPassword();
         }
         return null;
+    }
+
+    public List<PasswordEntry> getAll() {
+        if (!unlocked) return List.of();
+        return storage.getAll();
+    }
+
+    public List<PasswordEntry> search(String keyword) {
+        if (!unlocked) return List.of();
+        return storage.search(keyword);
     }
 
     public void searchEntries(String keyword) {
