@@ -11,4 +11,5 @@ public interface PasswordStorage {
     PasswordEntry findBySourceAndLogin(char[] source, char[] login);
     List<PasswordEntry> search(String keyword);
     List<PasswordEntry> getAll();
+    void delete(char[] source, char[] login);
 }

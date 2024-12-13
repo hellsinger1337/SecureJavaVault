@@ -26,7 +26,6 @@ public class MainFX extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        // Покажем диалог для ввода мастер-пароля
         char[] masterPassword = showMasterPasswordDialog();
         if (masterPassword == null) {
             // Пользователь отменил ввод
@@ -34,6 +33,7 @@ public class MainFX extends Application {
         }
 
         facade = new PasswordManagerFacade(masterPassword);
+        // Очистка мастер-пароля
         Arrays.fill(masterPassword, '\0');
 
         if (!facade.isUnlocked()) {
@@ -43,13 +43,15 @@ public class MainFX extends Application {
 
         primaryStage.setTitle("Password Manager");
 
-        // Создадим таблицу для отображения записей
+        // Создаём таблицу для отображения записей
         tableView = new TableView<>();
         TableColumn<PasswordEntryWrapper, String> sourceCol = new TableColumn<>("Источник");
         sourceCol.setCellValueFactory(new PropertyValueFactory<>("source"));
+        sourceCol.setPrefWidth(250);
 
         TableColumn<PasswordEntryWrapper, String> loginCol = new TableColumn<>("Логин");
         loginCol.setCellValueFactory(new PropertyValueFactory<>("login"));
+        loginCol.setPrefWidth(250);
 
         tableView.getColumns().addAll(sourceCol, loginCol);
 
@@ -60,7 +62,8 @@ public class MainFX extends Application {
         addBtn.setOnAction(e -> {
             AddEntryResult result = showAddEntryDialog();
             if (result != null) {
-                facade.addEntry(result.source, result.login, result.password);
+                facade.addEntry(result.source.clone(), result.login.clone(), result.password.clone());
+                // Очистка введённых данных
                 Arrays.fill(result.source, '\0');
                 Arrays.fill(result.login, '\0');
                 Arrays.fill(result.password, '\0');
@@ -76,16 +79,53 @@ public class MainFX extends Application {
                 showAlert("Информация", "Не выбрана запись");
                 return;
             }
-            char[] pass = facade.getPassword(selected.source.toCharArray(), selected.login.toCharArray());
+            char[] pass = facade.getPassword(selected.source, selected.login);
             if (pass == null) {
-                showAlert("Информация", "Пароль не найден (возможно ошибка)");
+                showAlert("Информация", "Пароль не найден");
             } else {
                 showAlert("Пароль", "Пароль: " + new String(pass));
                 Arrays.fill(pass, '\0');
             }
         });
 
-        // Поле для поиска
+        Button editBtn = new Button("Edit");
+        editBtn.setOnAction(e -> {
+            PasswordEntryWrapper selected = tableView.getSelectionModel().getSelectedItem();
+            if (selected == null) {
+                showAlert("Информация", "Не выбрана запись для редактирования");
+                return;
+            }
+            EditEntryResult result = showEditEntryDialog(selected);
+            if (result != null) {
+                facade.editEntry(
+                        selected.source,
+                        selected.login,
+                        result.newSource.clone(),
+                        result.newLogin,
+                        result.newPassword
+                );
+                // Очистка введённых данных
+                Arrays.fill(result.newSource, '\0');
+                Arrays.fill(result.newLogin, '\0');
+                Arrays.fill(result.newPassword, '\0');
+                loadAllEntries();
+            }
+        });
+
+        Button deleteBtn = new Button("Delete");
+        deleteBtn.setOnAction(e -> {
+            PasswordEntryWrapper selected = tableView.getSelectionModel().getSelectedItem();
+            if (selected == null) {
+                showAlert("Информация", "Не выбрана запись для удаления");
+                return;
+            }
+            boolean confirmed = showConfirmationDialog("Удаление", "Вы уверены, что хотите удалить выбранную запись?");
+            if (confirmed) {
+                facade.deleteEntry(selected.source, selected.login);
+                loadAllEntries();
+            }
+        });
+
         TextField searchField = new TextField();
         searchField.setPromptText("Поиск...");
         Button searchBtn = new Button("Search");
@@ -98,21 +138,21 @@ public class MainFX extends Application {
             }
         });
 
-        // Кнопка выхода
         Button exitBtn = new Button("Exit");
         exitBtn.setOnAction(e -> {
             facade.close();
             primaryStage.close();
         });
 
-        HBox buttonsBox = new HBox(10, addBtn, getBtn, searchField, searchBtn, exitBtn);
+        HBox buttonsBox = new HBox(10, addBtn, getBtn, editBtn, deleteBtn, searchField, searchBtn, exitBtn);
         buttonsBox.setPadding(new Insets(10));
         buttonsBox.setAlignment(Pos.CENTER_LEFT);
+
 
         VBox root = new VBox(10, tableView, buttonsBox);
         root.setPadding(new Insets(10));
 
-        Scene scene = new Scene(root, 600, 400);
+        Scene scene = new Scene(root, 800, 500); 
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -197,16 +237,16 @@ public class MainFX extends Application {
         vbox.setPadding(new Insets(10));
 
         okBtn.setOnAction(e -> {
-            String s = sourceField.getText().trim();
-            String l = loginField.getText().trim();
-            String p = passwordField.getText();
-            if (s.isEmpty() || l.isEmpty() || p.isEmpty()) {
+            char[] source = sourceField.getText().trim().toCharArray();
+            char[] login = loginField.getText().trim().toCharArray();
+            char[] password = passwordField.getText().toCharArray();
+            if (source.length == 0 || login.length == 0 || password.length == 0) {
                 showAlert("Ошибка", "Все поля должны быть заполнены!");
             } else {
                 AddEntryResult result = new AddEntryResult();
-                result.source = s.toCharArray();
-                result.login = l.toCharArray();
-                result.password = p.toCharArray();
+                result.source = source;
+                result.login = login;
+                result.password = password;
                 dialog.setUserData(result);
                 dialog.close();
             }
@@ -223,6 +263,65 @@ public class MainFX extends Application {
         return (AddEntryResult) dialog.getUserData();
     }
 
+    private EditEntryResult showEditEntryDialog(PasswordEntryWrapper entry) {
+        Stage dialog = new Stage();
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.setTitle("Редактировать запись");
+
+        TextField sourceField = new TextField(new String(entry.source));
+        TextField loginField = new TextField(new String(entry.login));
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Новый пароль");
+
+        Button okBtn = new Button("OK");
+        Button cancelBtn = new Button("Cancel");
+
+        HBox btnBox = new HBox(10, okBtn, cancelBtn);
+        btnBox.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox vbox = new VBox(10,
+                new Label("Источник:"), sourceField,
+                new Label("Логин:"), loginField,
+                new Label("Новый пароль:"), passwordField,
+                btnBox);
+        vbox.setPadding(new Insets(10));
+
+        okBtn.setOnAction(e -> {
+            char[] newSource = sourceField.getText().trim().toCharArray();
+            char[] newLogin = loginField.getText().trim().toCharArray();
+            char[] newPassword = passwordField.getText().toCharArray();
+            if (newSource.length == 0 || newLogin.length == 0 || newPassword.length == 0) {
+                showAlert("Ошибка", "Все поля должны быть заполнены!");
+            } else {
+                EditEntryResult result = new EditEntryResult();
+                result.newSource = newSource;
+                result.newLogin = newLogin;
+                result.newPassword = newPassword;
+                dialog.setUserData(result);
+                dialog.close();
+            }
+        });
+
+        cancelBtn.setOnAction(e -> {
+            dialog.setUserData(null);
+            dialog.close();
+        });
+
+        Scene scene = new Scene(vbox);
+        dialog.setScene(scene);
+        dialog.showAndWait();
+        return (EditEntryResult) dialog.getUserData();
+    }
+
+    private boolean showConfirmationDialog(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.YES, ButtonType.NO);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.showAndWait();
+
+        return alert.getResult() == ButtonType.YES;
+    }
+
     private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION, message, ButtonType.OK);
         alert.setTitle(title);
@@ -230,29 +329,33 @@ public class MainFX extends Application {
         alert.showAndWait();
     }
 
-    // Вспомогательный класс для хранения введённых данных при добавлении записи
     private static class AddEntryResult {
         char[] source;
         char[] login;
         char[] password;
     }
 
-    // Обёртка для PasswordEntry, чтобы удобно отобразить в TableView
+    private static class EditEntryResult {
+        char[] newSource;
+        char[] newLogin;
+        char[] newPassword;
+    }
+
     public static class PasswordEntryWrapper {
-        private final String source;
-        private final String login;
+        private final char[] source;
+        private final char[] login;
 
         public PasswordEntryWrapper(PasswordEntry entry) {
-            this.source = new String(entry.getSource());
-            this.login = new String(entry.getLogin());
+            this.source = entry.getSource();
+            this.login = entry.getLogin();
         }
 
         public String getSource() {
-            return source;
+            return new String(source);
         }
 
         public String getLogin() {
-            return login;
+            return new String(login);
         }
     }
 }

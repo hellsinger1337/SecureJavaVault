@@ -154,6 +154,20 @@ public class FilePasswordStorage implements PasswordStorage {
             return false;
         }
     }
+    
+    @Override
+    public void delete(char[] source, char[] login) {
+        PasswordEntry toDelete = null;
+        for (PasswordEntry e : entries) {
+            if (Arrays.equals(e.getSource(), source) && Arrays.equals(e.getLogin(), login)) {
+                toDelete = e;
+                break;
+            }
+        }
+        if (toDelete != null) {
+            entries.remove(toDelete);
+        }
+    }
 
     private void writeCharArray(DataOutputStream dos, char[] arr) throws IOException {
         dos.writeInt(arr.length);

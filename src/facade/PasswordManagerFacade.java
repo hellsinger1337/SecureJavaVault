@@ -62,6 +62,29 @@ public class PasswordManagerFacade {
             }
         }
     }
+    
+    public void deleteEntry(char[] source, char[] login) {
+        if (!unlocked) return;
+        storage.delete(source, login);
+        storage.save();
+    }
+
+    public void editEntry(char[] oldSource, char[] oldLogin, char[] newSource, char[] newLogin, char[] newPassword) {
+        if (!unlocked) return;
+        PasswordEntry oldEntry = storage.findBySourceAndLogin(oldSource, oldLogin);
+        if (oldEntry != null) {
+            // Удаляем старую запись
+            storage.delete(oldSource, oldLogin);
+            // Добавляем новую запись
+            PasswordEntry newEntry = new PasswordEntryBuilder()
+                    .setSource(newSource)
+                    .setLogin(newLogin)
+                    .setPassword(newPassword)
+                    .build();
+            storage.add(newEntry);
+            storage.save();
+        }
+    }
 
     public void close() {
         if (unlocked) {

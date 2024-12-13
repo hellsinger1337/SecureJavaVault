@@ -14,15 +14,15 @@ public class PasswordEntry {
     }
 
     public char[] getSource() {
-        return source;
+        return source.clone();
     }
 
     public char[] getLogin() {
-        return login;
+        return login.clone();
     }
 
     public char[] getPassword() {
-        return password;
+        return password.clone();
     }
 
     public void clear() {
