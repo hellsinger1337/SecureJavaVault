@@ -28,12 +28,12 @@ public class MainFX extends Application {
     public void start(Stage primaryStage) {
         char[] masterPassword = showMasterPasswordDialog();
         if (masterPassword == null) {
-            // Пользователь отменил ввод
+            
             System.exit(0);
         }
 
         facade = new PasswordManagerFacade(masterPassword);
-        // Очистка мастер-пароля
+        
         Arrays.fill(masterPassword, '\0');
 
         if (!facade.isUnlocked()) {
@@ -43,7 +43,7 @@ public class MainFX extends Application {
 
         primaryStage.setTitle("Password Manager");
 
-        // Создаём таблицу для отображения записей
+        
         tableView = new TableView<>();
         TableColumn<PasswordEntryWrapper, String> sourceCol = new TableColumn<>("Источник");
         sourceCol.setCellValueFactory(new PropertyValueFactory<>("source"));
@@ -57,13 +57,13 @@ public class MainFX extends Application {
 
         loadAllEntries();
 
-        // Кнопка Add
+        
         Button addBtn = new Button("Add");
         addBtn.setOnAction(e -> {
             AddEntryResult result = showAddEntryDialog();
             if (result != null) {
                 facade.addEntry(result.source.clone(), result.login.clone(), result.password.clone());
-                // Очистка введённых данных
+                
                 Arrays.fill(result.source, '\0');
                 Arrays.fill(result.login, '\0');
                 Arrays.fill(result.password, '\0');
@@ -71,7 +71,7 @@ public class MainFX extends Application {
             }
         });
 
-        // Кнопка Get
+        
         Button getBtn = new Button("Get");
         getBtn.setOnAction(e -> {
             PasswordEntryWrapper selected = tableView.getSelectionModel().getSelectedItem();
@@ -101,10 +101,10 @@ public class MainFX extends Application {
                         selected.source,
                         selected.login,
                         result.newSource.clone(),
-                        result.newLogin,
-                        result.newPassword
+                        result.newLogin.clone(),
+                        result.newPassword.clone()
                 );
-                // Очистка введённых данных
+                
                 Arrays.fill(result.newSource, '\0');
                 Arrays.fill(result.newLogin, '\0');
                 Arrays.fill(result.newPassword, '\0');
