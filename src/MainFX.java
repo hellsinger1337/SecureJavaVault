@@ -26,7 +26,7 @@ public class MainFX extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        char[] masterPassword = promptPassword("Мастер-пароль", "Введите мастер-пароль:");
+        char[] masterPassword = promptPassword("Master Password", "Enter master password:");
         if (masterPassword == null) {
             System.exit(0);
         }
@@ -35,7 +35,7 @@ public class MainFX extends Application {
         Arrays.fill(masterPassword, '\0');
 
         if (!facade.isUnlocked()) {
-            showAlert("Ошибка", "Неверный мастер-пароль");
+            showAlert("Error", "Incorrect master password");
             System.exit(0);
         }
 
@@ -55,8 +55,8 @@ public class MainFX extends Application {
     private TableView<PasswordEntryWrapper> createTableView() {
         TableView<PasswordEntryWrapper> table = new TableView<>();
         table.getColumns().addAll(
-            createColumn("Источник", "source", 250),
-            createColumn("Логин", "login", 250)
+            createColumn("Source", "source", 250),
+            createColumn("Login", "login", 250)
         );
         return table;
     }
@@ -71,7 +71,7 @@ public class MainFX extends Application {
     private HBox createButtonsBox() {
         Button addBtn = new Button("Add");
         addBtn.setOnAction(e -> {
-            EntryResult result = showEntryDialog("Добавить запись", null);
+            EntryResult result = showEntryDialog("Add Entry", null);
             if (result != null) {
                 facade.addEntry(result.source, result.login, result.password);
                 loadEntries(facade.getAll());
@@ -82,14 +82,14 @@ public class MainFX extends Application {
         getBtn.setOnAction(e -> {
             PasswordEntryWrapper selected = tableView.getSelectionModel().getSelectedItem();
             if (selected == null) {
-                showAlert("Информация", "Не выбрана запись");
+                showAlert("Information", "No entry selected");
                 return;
             }
             char[] pass = facade.getPassword(selected.source, selected.login);
             if (pass == null) {
-                showAlert("Информация", "Пароль не найден");
+                showAlert("Information", "Password not found");
             } else {
-                showAlert("Пароль", "Пароль: " + new String(pass));
+                showAlert("Password", "Password: " + new String(pass));
             }
         });
 
@@ -97,10 +97,10 @@ public class MainFX extends Application {
         editBtn.setOnAction(e -> {
             PasswordEntryWrapper selected = tableView.getSelectionModel().getSelectedItem();
             if (selected == null) {
-                showAlert("Информация", "Не выбрана запись для редактирования");
+                showAlert("Information", "No entry selected for editing");
                 return;
             }
-            EntryResult result = showEntryDialog("Редактировать запись", selected);
+            EntryResult result = showEntryDialog("Edit Entry", selected);
             if (result != null) {
                 facade.editEntry(selected.source, selected.login, result.source, result.login, result.password);
                 loadEntries(facade.getAll());
@@ -111,17 +111,17 @@ public class MainFX extends Application {
         deleteBtn.setOnAction(e -> {
             PasswordEntryWrapper selected = tableView.getSelectionModel().getSelectedItem();
             if (selected == null) {
-                showAlert("Информация", "Не выбрана запись для удаления");
+                showAlert("Information", "No entry selected for deletion");
                 return;
             }
-            if (confirmAction("Удаление", "Вы уверены, что хотите удалить выбранную запись?")) {
+            if (confirmAction("Deletion", "Are you sure you want to delete the selected entry?")) {
                 facade.deleteEntry(selected.source, selected.login);
                 loadEntries(facade.getAll());
             }
         });
 
         TextField searchField = new TextField();
-        searchField.setPromptText("Поиск...");
+        searchField.setPromptText("Search...");
         Button searchBtn = new Button("Search");
         searchBtn.setOnAction(e -> {
             String keyword = searchField.getText().trim();
@@ -163,7 +163,7 @@ public class MainFX extends Application {
                 dialog.setUserData(passwordField.getText().toCharArray());
                 dialog.close();
             } else {
-                showAlert("Ошибка", "Пароль не может быть пустым");
+                showAlert("Error", "Password cannot be empty");
             }
         });
 
@@ -191,7 +191,7 @@ public class MainFX extends Application {
         TextField sourceField = new TextField(entry != null ? new String(entry.source) : "");
         TextField loginField = new TextField(entry != null ? new String(entry.login) : "");
         PasswordField passwordField = new PasswordField();
-        passwordField.setPromptText(entry == null ? "Пароль" : "Новый пароль");
+        passwordField.setPromptText(entry == null ? "Password" : "New Password");
 
         Button okBtn = new Button("OK");
         Button cancelBtn = new Button("Cancel");
@@ -203,7 +203,7 @@ public class MainFX extends Application {
             char[] login = loginField.getText().trim().toCharArray();
             char[] password = passwordField.getText().toCharArray();
             if (source.length == 0 || login.length == 0 || password.length == 0) {
-                showAlert("Ошибка", "Все поля должны быть заполнены!");
+                showAlert("Error", "All fields must be filled!");
             } else {
                 EntryResult result = new EntryResult(source, login, password);
                 dialog.setUserData(result);
@@ -220,9 +220,9 @@ public class MainFX extends Application {
         btnBox.setAlignment(Pos.CENTER_RIGHT);
 
         VBox vbox = new VBox(10,
-                new Label("Источник:"), sourceField,
-                new Label("Логин:"), loginField,
-                new Label(entry == null ? "Пароль:" : "Новый пароль:"), passwordField,
+                new Label("Source:"), sourceField,
+                new Label("Login:"), loginField,
+                new Label(entry == null ? "Password:" : "New Password:"), passwordField,
                 btnBox);
         vbox.setPadding(new Insets(10));
 
