@@ -55,10 +55,10 @@ public class PasswordManagerFacade {
         if (!unlocked) return;
         List<PasswordEntry> results = storage.search(keyword);
         if (results.isEmpty()) {
-            System.out.println("Нет записей, соответствующих запросу.");
+            System.out.println("No entries matching the query.");
         } else {
             for (PasswordEntry e : results) {
-                System.out.println("Источник: " + new String(e.getSource()) + ", Логин: " + new String(e.getLogin()));
+                System.out.println("Source: " + new String(e.getSource()) + ", Login: " + new String(e.getLogin()));
             }
         }
     }
@@ -73,9 +73,7 @@ public class PasswordManagerFacade {
         if (!unlocked) return;
         PasswordEntry oldEntry = storage.findBySourceAndLogin(oldSource, oldLogin);
         if (oldEntry != null) {
-            // Удаляем старую запись
             storage.delete(oldSource, oldLogin);
-            // Добавляем новую запись
             PasswordEntry newEntry = new PasswordEntryBuilder()
                     .setSource(newSource)
                     .setLogin(newLogin)
