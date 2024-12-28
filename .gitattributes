@@ -1,2 +1,21 @@
-# Auto detect text files and perform LF normalization
+# Auto-detect text files and perform LF normalization
 * text=auto
+
+# Explicitly declare text files you want to always be normalized
+*.java text
+*.xml text
+*.md text
+
+# Declare binary files to be handled as binary and not text
+*.png binary
+*.jpg binary
+*.gif binary
+*.jar binary
+*.war binary
+*.ear binary
+*.zip binary
+*.tar.gz binary
+*.rar binary
+
+# Treat all files in the lib directory as binary
+lib/** binary
